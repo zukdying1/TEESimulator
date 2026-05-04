@@ -31,6 +31,9 @@ internal object KeystoreErrorCode {
     const val KEY_EXPIRED = -25
     const val KEY_NOT_YET_VALID = -24
 
+    /** KeyMint ErrorCode::TOO_MANY_OPERATIONS */
+    const val TOO_MANY_OPERATIONS = -31
+
     /** KeyMint ErrorCode::CALLER_NONCE_PROHIBITED */
     const val CALLER_NONCE_PROHIBITED = -55
 

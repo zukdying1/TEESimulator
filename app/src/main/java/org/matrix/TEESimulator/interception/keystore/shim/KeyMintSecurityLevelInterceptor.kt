@@ -332,6 +332,16 @@ class KeyMintSecurityLevelInterceptor(
             )
         }
 
+        // StrongBox SE has limited memory; cap concurrent operations.
+        if (securityLevel == SecurityLevel.STRONGBOX) {
+            if (strongboxActiveOps.get() >= MAX_STRONGBOX_CONCURRENT_OPS) {
+                return InterceptorUtils.createServiceSpecificErrorReply(
+                    KeystoreErrorCode.TOO_MANY_OPERATIONS
+                )
+            }
+            strongboxActiveOps.incrementAndGet()
+        }
+
         return runCatching {
                 // Use key params for crypto properties (algorithm, digest, etc.) but
                 // override purpose from the operation params.
@@ -363,11 +373,22 @@ class KeyMintSecurityLevelInterceptor(
                         usageCounters.remove(resolvedKeyId)
                         throw android.os.ServiceSpecificException(KeystoreErrorCode.KEY_NOT_FOUND)
                     }
+                    val prevCallback = softwareOperation.onFinishCallback
                     softwareOperation.onFinishCallback = {
+                        prevCallback?.invoke()
                         if (remaining.decrementAndGet() <= 0) {
                             cleanupKeyData(resolvedKeyId)
                             usageCounters.remove(resolvedKeyId)
                         }
+                    }
+                }
+
+                // Decrement StrongBox concurrent op counter on operation completion.
+                if (securityLevel == SecurityLevel.STRONGBOX) {
+                    val prevCallback = softwareOperation.onFinishCallback
+                    softwareOperation.onFinishCallback = {
+                        prevCallback?.invoke()
+                        strongboxActiveOps.decrementAndGet()
                     }
                 }
 
@@ -383,6 +404,7 @@ class KeyMintSecurityLevelInterceptor(
                 InterceptorUtils.createTypedObjectReply(response)
             }
             .getOrElse { e ->
+                if (securityLevel == SecurityLevel.STRONGBOX) strongboxActiveOps.decrementAndGet()
                 SystemLogger.error("[TX_ID: $txId] Failed to create software operation.", e)
                 InterceptorUtils.createServiceSpecificErrorReply(
                     if (e is android.os.ServiceSpecificException) e.errorCode
@@ -743,6 +765,10 @@ class KeyMintSecurityLevelInterceptor(
         private const val PERMISSION_DENIED = 6
         private const val SECURE_HW_COMMUNICATION_FAILED = -49
         private const val CANNOT_ATTEST_IDS = -66
+
+        /** StrongBox SE has limited memory; concurrent operations are capped. */
+        private val strongboxActiveOps = java.util.concurrent.atomic.AtomicInteger(0)
+        private const val MAX_STRONGBOX_CONCURRENT_OPS = 16
 
         // Transaction codes for IKeystoreSecurityLevel interface.
         private val GENERATE_KEY_TRANSACTION =
