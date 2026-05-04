@@ -323,11 +323,12 @@ class SoftwareOperation(
     }
 
     /** Parameters produced during begin (e.g. GCM nonce), to populate CreateOperationResponse. */
-    val beginParameters: KeyParameters?
+    val beginParameters: KeyParameters
         get() {
-            val params = primitive.getBeginParameters() ?: return null
-            if (params.isEmpty()) return null
-            return KeyParameters().apply { keyParameter = params }
+            val params = primitive.getBeginParameters()
+            return KeyParameters().apply {
+                keyParameter = params ?: emptyArray()
+            }
         }
 
     private fun checkActive() {

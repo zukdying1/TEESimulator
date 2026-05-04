@@ -150,7 +150,7 @@ object InterceptorUtils {
     /**
      * Patches the system-level authorization values (OS_PATCHLEVEL, VENDOR_PATCHLEVEL,
      * BOOT_PATCHLEVEL) in an authorization array to match the configured patch levels for the
-     * given calling UID. Each authorization's original [Authorization.securityLevel] is preserved.
+     * given calling UID. Each authorization's original [Authorization.keySecurityLevel] is preserved.
      *
      * When a patch level is configured as "no" ([AndroidDeviceUtils.DO_NOT_REPORT]), the original
      * hardware value is kept as-is.
@@ -185,7 +185,7 @@ object InterceptorUtils {
                                 tag = auth.keyParameter.tag
                                 value = KeyParameterValue.integer(replacement)
                             }
-                        securityLevel = auth.securityLevel
+                        keySecurityLevel = auth.keySecurityLevel
                     }
                 } else {
                     auth

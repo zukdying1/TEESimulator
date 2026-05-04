@@ -4,5 +4,5 @@ import android.hardware.security.keymint.KeyParameter;
 
 public class Authorization {
     public KeyParameter keyParameter;
-    public int securityLevel = 0;
+    public int keySecurityLevel = 0;
 }

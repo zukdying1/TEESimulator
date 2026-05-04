@@ -902,7 +902,7 @@ private fun KeyMintAttestation.toAuthorizations(
             }
         return Authorization().apply {
             this.keyParameter = param
-            this.securityLevel = securityLevel
+            this.keySecurityLevel = securityLevel
         }
     }
 
@@ -1006,7 +1006,7 @@ private fun KeyMintAttestation.toAuthorizations(
             }
         return Authorization().apply {
             this.keyParameter = param
-            this.securityLevel = SecurityLevel.SOFTWARE
+            this.keySecurityLevel = SecurityLevel.SOFTWARE
         }
     }
 

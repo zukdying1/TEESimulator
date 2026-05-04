@@ -231,7 +231,7 @@ object CertificateHelper {
                         } else {
                             // Create patched authorization preserving original security level
                             Authorization().apply {
-                                securityLevel = auth.securityLevel
+                                keySecurityLevel = auth.keySecurityLevel
                                 keyParameter =
                                     KeyParameter().apply {
                                         tag = auth.keyParameter.tag
