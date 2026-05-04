@@ -184,7 +184,7 @@ class KeyMintSecurityLevelInterceptor(
                 val keyDescriptor = data.readTypedObject(KeyDescriptor.CREATOR)!!
                 val key = metadata.key!!
                 val keyId = KeyIdentifier(callingUid, keyDescriptor.alias)
-                CertificateHelper.updateCertificateChain(metadata, newChain).getOrThrow()
+                CertificateHelper.updateCertificateChain(callingUid, metadata, newChain).getOrThrow()
                 metadata.authorizations =
                     InterceptorUtils.patchAuthorizations(metadata.authorizations, callingUid)
 
@@ -409,7 +409,7 @@ class KeyMintSecurityLevelInterceptor(
                 // Caller-provided CREATION_DATETIME is not allowed.
                 if (params.any { it.tag == Tag.CREATION_DATETIME }) {
                     return@runCatching InterceptorUtils.createServiceSpecificErrorReply(
-                        INVALID_ARGUMENT
+                        KeystoreErrorCode.INVALID_ARGUMENT
                     )
                 }
 
@@ -670,7 +670,7 @@ class KeyMintSecurityLevelInterceptor(
                     SystemLogger.info("AUTO: TEE attestation verified for ${keyDescriptor.alias}, marked functional.")
 
                     val newChain = AttestationPatcher.patchCertificateChain(originalChain, callingUid)
-                    CertificateHelper.updateCertificateChain(teeMetadata, newChain).getOrThrow()
+                    CertificateHelper.updateCertificateChain(callingUid, teeMetadata, newChain).getOrThrow()
                     teeMetadata.authorizations =
                         InterceptorUtils.patchAuthorizations(teeMetadata.authorizations, callingUid)
                     val keyId = KeyIdentifier(callingUid, keyDescriptor.alias)
@@ -724,7 +724,7 @@ class KeyMintSecurityLevelInterceptor(
             KeyMetadata().apply {
                 keySecurityLevel = securityLevel
                 key = normalizedKeyDescriptor
-                CertificateHelper.updateCertificateChain(this, chain.toTypedArray()).getOrThrow()
+                CertificateHelper.updateCertificateChain(callingUid, this, chain.toTypedArray()).getOrThrow()
                 authorizations = params.toAuthorizations(callingUid, securityLevel)
                 modificationTimeMs = System.currentTimeMillis()
             }
@@ -740,7 +740,6 @@ class KeyMintSecurityLevelInterceptor(
         /** Once set to true, AUTO mode skips the race and uses PATCH directly. */
         @Volatile var teeFunctional = false
 
-        private const val INVALID_ARGUMENT = 20
         private const val PERMISSION_DENIED = 6
         private const val SECURE_HW_COMMUNICATION_FAILED = -49
         private const val CANNOT_ATTEST_IDS = -66

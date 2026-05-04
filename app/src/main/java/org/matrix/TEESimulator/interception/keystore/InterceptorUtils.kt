@@ -138,7 +138,8 @@ object InterceptorUtils {
             Parcel.obtain().apply {
                 writeInt(-8) // EX_SERVICE_SPECIFIC
                 // null String16: length = -1. Using writeInt(-1) directly avoids
-                // any locale-dependent encoding differences in writeString(null).
+                // relying on Java Parcel's internal null-string handling,
+                // matching the native C++ binder wire format deterministically.
                 writeInt(-1) // null String16 message
                 writeInt(0) // remote stack trace header size (empty)
                 writeInt(errorCode) // service-specific error code
