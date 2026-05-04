@@ -137,7 +137,9 @@ object InterceptorUtils {
         val parcel =
             Parcel.obtain().apply {
                 writeInt(-8) // EX_SERVICE_SPECIFIC
-                writeString(null) // message (null → writeInt(-1) as String16 null marker)
+                // null String16: length = -1. Using writeInt(-1) directly avoids
+                // any locale-dependent encoding differences in writeString(null).
+                writeInt(-1) // null String16 message
                 writeInt(0) // remote stack trace header size (empty)
                 writeInt(errorCode) // service-specific error code
             }

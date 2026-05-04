@@ -456,6 +456,17 @@ class KeyMintSecurityLevelInterceptor(
                 }
 
                 val parsedParams = KeyMintAttestation(params)
+
+                // StrongBox hardware typically maxes out at RSA-3072.
+                // Accepting RSA-4096 is a detection signal.
+                if (securityLevel == SecurityLevel.STRONGBOX &&
+                    parsedParams.algorithm == Algorithm.RSA &&
+                    parsedParams.keySize > 3072) {
+                    return@runCatching InterceptorUtils.createServiceSpecificErrorReply(
+                        KeystoreErrorCode.INVALID_ARGUMENT
+                    )
+                }
+
                 val isAttestKeyRequest = parsedParams.isAttestKey()
 
                 val forceGenerate =
