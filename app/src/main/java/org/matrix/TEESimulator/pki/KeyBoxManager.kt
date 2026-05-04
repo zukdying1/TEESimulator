@@ -232,6 +232,44 @@ object KeyBoxManager {
             eventType = parser.next()
         }
         SystemLogger.info("Finished parsing, found ${foundKeys.size} valid keys.")
+
+        // On real devices, all attestation algorithms share the same intermediate/root CA chain.
+        // Normalize so different algorithm entries use a consistent chain.
+        normalizeChains(foundKeys)
+
         return foundKeys
+    }
+
+    /**
+     * Ensures all keyboxes in the same file share the same intermediate/root certificate chain.
+     * On real hardware, the attestation CA hierarchy is shared across algorithms.
+     */
+    private fun normalizeChains(keys: MutableMap<String, KeyBox>) {
+        if (keys.size <= 1) return
+
+        // Use the first entry's chain as canonical.
+        val canonicalChain = keys.values.first().certificates
+        val canonicalFingerprint = chainFingerprint(canonicalChain)
+
+        for ((algo, keybox) in keys) {
+            val fp = chainFingerprint(keybox.certificates)
+            if (fp != canonicalFingerprint) {
+                SystemLogger.info(
+                    "Normalizing $algo chain to match canonical chain (was ${keybox.certificates.size} certs)."
+                )
+                keys[algo] = KeyBox(keybox.keyPair, canonicalChain)
+            }
+        }
+    }
+
+    /** Computes a fingerprint of the certificate chain (excluding leaf) for comparison. */
+    private fun chainFingerprint(chain: List<java.security.cert.Certificate>): String {
+        // Skip index 0 (leaf), hash the rest
+        val chainCerts = chain.drop(1)
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        for (cert in chainCerts) {
+            md.update(cert.encoded)
+        }
+        return md.digest().contentToString()
     }
 }
